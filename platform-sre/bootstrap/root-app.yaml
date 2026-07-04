@@ -1,10 +1,3 @@
-# Root Application (pattern App of Apps) — version TP 3.
-#
-# C'est la SEULE Application que vous créez à la main avec `kubectl apply`.
-# Tout le reste sera créé par elle, à partir des fichiers de `platform-sre/apps/`.
-#
-# Référence : https://argo-cd.readthedocs.io/en/stable/operator-manual/cluster-bootstrapping/
-
 apiVersion: argoproj.io/v1alpha1
 kind: Application
 metadata:
@@ -16,11 +9,8 @@ spec:
   project: devhub
 
   source:
-    # TODO : remplacez par l'URL HTTPS de votre fork de ce repo.
     repoURL: https://github.com/rayanSalhi/pulse-campus.git
-    # TODO : choisissez une révision stable (branche `main`, ou un tag).
     targetRevision: main
-    # Recurse sur platform-sre/apps : observability + dev.
     path: platform-sre/apps
     directory:
       recurse: true
@@ -29,8 +19,6 @@ spec:
     server: https://kubernetes.default.svc
     namespace: argocd
 
-  # TODO : décidez de votre sync policy pour la root.
-  # Question à vous poser : selfHeal:true sur la root, est-ce souhaitable ?
   syncPolicy:
     automated:
       prune: false
