@@ -17,7 +17,7 @@ spec:
 
   # TODO : URL de votre fork du repo pulse-campus.
   sourceRepos:
-    # - https://github.com/<votre-handle>/pulse-campus.git
+    # - https://github.com/rayanSalhi/pulse-campus.git
     - "*"
 
   # TODO : ajustez si vous nommez vos namespaces différemment.

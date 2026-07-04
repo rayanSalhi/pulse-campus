@@ -1,0 +1,17 @@
+{{- if .Values.metrics.enabled }}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "app.fullname" . }}
+  labels:
+    # ATTENTION : Ce label est obligatoire pour que Prometheus le trouve !
+    release: kube-prometheus-stack
+spec:
+  selector:
+    matchLabels:
+      app: {{ include "app.name" . }}
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 15s
+{{- end }}
