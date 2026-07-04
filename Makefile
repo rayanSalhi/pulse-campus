@@ -6,23 +6,30 @@ INGRESS_CHART_VERSION ?= 4.11.3
 SERVICES := annuaire planning notif
 SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
 # Adaptez GHCR_USER à votre compte GitHub.
-GHCR_USER ?= changeme
+GHCR_USER ?= rayanSalhi
 
 .PHONY: help tools-check cluster-up cluster-down argocd-install argocd-password \
-        hosts-print helm-lint images-build images-load clean
+        hosts-print helm-lint images-build images-load clean bootstrap deploy-all
 
 help:
 	@echo "Cibles disponibles :"
+	@echo "  deploy-all        - 🚀 (NOUVEAU) Fait tout : cluster, argo, et déploie le TP 3"
 	@echo "  tools-check       - vérifie les CLI requises (TP 2 + TP 3)"
 	@echo "  cluster-up        - démarre un cluster kind 2 nœuds"
 	@echo "  cluster-down      - détruit le cluster"
 	@echo "  argocd-install    - installe ingress-nginx + ArgoCD (Helm)"
+	@echo "  bootstrap         - applique la root-app pour lancer le déploiement GitOps"
 	@echo "  argocd-password   - affiche le mot de passe admin initial d'ArgoCD"
 	@echo "  hosts-print       - lignes à ajouter dans /etc/hosts"
 	@echo "  helm-lint         - helm lint sur les charts des trois services"
 	@echo "  images-build      - build des trois images applicatives (tag SHA)"
 	@echo "  images-load       - kind load des trois images dans le cluster"
 	@echo "  clean             - détruit le cluster et nettoie les artefacts locaux"
+
+deploy-all: cluster-up argocd-install bootstrap
+	@echo ">>> 🚀 Déploiement complet terminé !"
+	@echo ">>> Attendez quelques minutes que les pods monitoring soient Running."
+	@echo ">>> Tapez 'make argocd-password' pour obtenir votre mot de passe admin."
 
 tools-check:
 	@missing=0; \
@@ -63,15 +70,24 @@ argocd-install:
 		--set "controller.tolerations[0].effect=NoSchedule" \
 		--set controller.hostPort.enabled=true \
 		--set controller.publishService.enabled=false
+	@echo ">>> Attente de la disponibilité de Ingress NGINX..."
 	kubectl wait --namespace ingress-nginx \
 		--for=condition=ready pod \
 		--selector=app.kubernetes.io/component=controller \
 		--timeout=180s
+	@echo ">>> Installation d'ArgoCD via Helm..."
 	helm upgrade --install argocd argo/argo-cd \
 		--namespace argocd --create-namespace \
 		--version $(ARGOCD_CHART_VERSION)
+	@echo ">>> Attente de la disponibilité d'ArgoCD..."
+	kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=120s
+
+bootstrap:
+	@echo ">>> Application de la Root App ArgoCD (GitOps)..."
+	kubectl apply -f platform-sre/bootstrap/root-app.yaml
 
 argocd-password:
+	@echo -n "Mot de passe Admin ArgoCD : "
 	@kubectl -n argocd get secret argocd-initial-admin-secret \
 		-o jsonpath='{.data.password}' | base64 -d ; echo
 
