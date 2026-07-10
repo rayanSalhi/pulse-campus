@@ -17,6 +17,12 @@ metadata:
   name: {{ include "annuaire.fullname" . }}
   labels:
     {{- include "annuaire.labels" . | nindent 4 }}
+  annotations:
+    # Étape 10 : notifications sur les déclencheurs intégrés d'Argo Rollouts.
+    # "rollout-events" doit correspondre au nom du notifier
+    # (service.webhook.rollout-events) déclaré dans argo-rollouts-values.yaml.
+    notifications.argoproj.io/subscribe.on-rollout-completed.rollout-events: ""
+    notifications.argoproj.io/subscribe.on-rollout-aborted.rollout-events: ""
 spec:
   replicas: {{ .Values.replicaCount }}
   revisionHistoryLimit: 3

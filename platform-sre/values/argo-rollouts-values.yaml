@@ -16,13 +16,19 @@ dashboard:
     pathType: Prefix
 
 # Active le service de notifications utilisé en étape 10.
+# Mêmes déclencheurs intégrés qu'Argo Rollouts fournit par défaut
+# (on-rollout-completed, on-rollout-aborted) — la souscription se fait par
+# annotation directement sur chaque Rollout (voir rollout.yaml d'annuaire).
+# Webhook pointant vers /-/healthy de Prometheus, faute d'un vrai récepteur
+# externe pour ce TP local (même logique que la config Alertmanager).
 notifications:
-  notifiers: {}
-  # TODO étape 10 : configurez ici les webhooks (succès, échec).
-  # secret:
-  #   create: true
-  # configmap:
-  #   create: true
+  notifiers:
+    service.webhook.rollout-events:
+      url: http://kps-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+  secret:
+    create: true
+  configmap:
+    create: true
 
 # En kind, gardez les ressources légères.
 controller:

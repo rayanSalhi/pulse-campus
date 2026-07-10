@@ -65,10 +65,44 @@ prometheus:
 # ---- Alertmanager ----
 alertmanager:
   enabled: true
-  # TODO étape 10 : votre configuration Alertmanager (routes, receivers).
-  # Tant que vide, le sous-chart utilise une config par défaut qui ne route
-  # nulle part.
-  config: {}
+  # Routing gradé (étape 10) : severity: page (réveille, group/repeat courts)
+  # vs severity: ticket (attend, group/repeat longs) — la gradation documentée
+  # au poly comme ce qui rend l'oncall vivable.
+  #
+  # Récepteurs : en l'absence d'un vrai Slack/PagerDuty/webhook.site pour ce
+  # TP local, les deux webhooks pointent vers l'endpoint /-/healthy de
+  # Prometheus (déjà déployé) — ça prouve que la livraison HTTP fonctionne
+  # (Alertmanager reçoit un 200) sans dépendre d'un service externe ni
+  # déployer un pod supplémentaire. À remplacer par une vraie URL en prod.
+  config:
+    global:
+      resolve_timeout: 5m
+    route:
+      receiver: default
+      group_by: ['alertname', 'service']
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 4h
+      routes:
+        - matchers:
+            - severity = "page"
+          receiver: webhook-page
+          group_wait: 10s
+          repeat_interval: 1h
+        - matchers:
+            - severity = "ticket"
+          receiver: webhook-ticket
+          repeat_interval: 12h
+    receivers:
+      - name: default
+      - name: webhook-page
+        webhook_configs:
+          - url: http://kps-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+            send_resolved: true
+      - name: webhook-ticket
+        webhook_configs:
+          - url: http://kps-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+            send_resolved: true
 
 # ---- Sous-charts à désactiver sur kind ----
 # Kind ne fournit pas les endpoints standards de la control plane.
