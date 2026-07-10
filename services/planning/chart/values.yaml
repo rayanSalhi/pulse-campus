@@ -43,7 +43,7 @@ useDeployment: false
 # rollout.prePromotionAnalysis : false pour la première démo, true pour la
 # seconde (bascule conditionnée à l'AnalysisTemplate de vérification preview).
 rollout:
-  marker: "v6"
+  marker: "v7"
   failRate: "0"
   autoPromotionEnabled: false
   prePromotionAnalysis: false
