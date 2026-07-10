@@ -1,0 +1,51 @@
+{{- /*
+  AnalysisTemplate (étape 7) : décide automatiquement de la promotion sur
+  preuve Prometheus, au lieu d'un pause manuel. Deux métriques, échantillonnées
+  30s pendant 5 min (10 mesures), alignées sur les SLO de l'étape 1
+  (annuaire : disponibilité >= 99,5% -> taux d'erreur < 1% ; latence p95 < 300ms).
+
+  args.canary-hash est injecté automatiquement par Argo Rollouts au moment de
+  la création de l'AnalysisRun (valueFrom: podTemplateHashValue: Canary) —
+  c'est ce qui permet de filtrer STRICTEMENT le trafic canary et de ne pas
+  diluer le signal avec le trafic stable (piège documenté à l'étape 7 du poly).
+*/ -}}
+{{- if not .Values.useDeployment }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "annuaire.fullname" . }}-success-rate
+  labels:
+    {{- include "annuaire.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: canary-hash
+  metrics:
+    - name: error-rate
+      interval: 30s
+      count: 10
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring.svc.cluster.local:9090
+          query: |
+            clamp_min(
+              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}", status_class="5xx"}[1m])) or vector(0)
+              /
+              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}"}[1m])),
+              0
+            )
+      successCondition: result[0] < 0.01
+    - name: latency-p95
+      interval: 30s
+      count: 10
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring.svc.cluster.local:9090
+          query: |
+            histogram_quantile(
+              0.95,
+              sum(rate(http_request_duration_seconds_bucket{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}"}[1m])) by (le)
+            )
+      successCondition: result[0] < 0.3
+{{- end }}

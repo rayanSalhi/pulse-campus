@@ -83,12 +83,19 @@ spec:
         nginx:
           stableIngress: {{ include "annuaire.fullname" . }}
       steps:
-        # Étape 6 : pause indéfinie à 10% pour piloter manuellement
-        # (promote / abort / promote --full). L'AnalysisTemplate (étape 7)
-        # est inséré entre le 25% et le 50% une fois écrit.
-        - setWeight: 10
-        - pause: {}
+        - setWeight: 20
+        # Étape 7 : la promotion vers 50%/100% est désormais conditionnée à
+        # l'AnalysisTemplate (taux d'erreur + latence p95 du canary), plus
+        # au pause manuel de l'étape 6 — le canary se promeut ou se rollback
+        # tout seul si les métriques restent/sortent des seuils du SLO.
+        - analysis:
+            templates:
+              - templateName: {{ include "annuaire.fullname" . }}-success-rate
+            args:
+              - name: canary-hash
+                valueFrom:
+                  podTemplateHashValue: Canary
         - setWeight: 50
-        - pause: {duration: 1m}
+        - pause: {duration: 30s}
         - setWeight: 100
 {{- end }}
