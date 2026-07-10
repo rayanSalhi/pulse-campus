@@ -2,9 +2,9 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "annuaire.fullname" . }}
+  name: {{ include "planning.fullname" . }}
   labels:
-    {{- include "annuaire.labels" . | nindent 4 }}
+    {{- include "planning.labels" . | nindent 4 }}
     # ATTENTION : ce label doit correspondre au releaseName du chart
     # kube-prometheus-stack (serviceMonitorSelector.matchLabels.release), sinon
     # Prometheus ignore silencieusement ce ServiceMonitor.
@@ -12,15 +12,15 @@ metadata:
 spec:
   selector:
     matchLabels:
-      {{- include "annuaire.selectorLabels" . | nindent 6 }}
+      {{- include "planning.selectorLabels" . | nindent 6 }}
   endpoints:
     - port: http
       path: /metrics
       interval: {{ .Values.monitoring.serviceMonitor.interval }}
       # Copie le label de pod rollouts-pod-template-hash (posé par Argo Rollouts
-      # sur les pods stable/canary) dans un label de métrique exploitable en
-      # PromQL — nécessaire pour l'AnalysisTemplate (étape 7) qui doit
-      # distinguer le trafic canary du trafic stable.
+      # sur les pods stable/canary/preview/active) dans un label de métrique
+      # exploitable en PromQL — nécessaire pour l'AnalysisTemplate (étape 7/8)
+      # qui doit distinguer le trafic canary/preview du trafic stable.
       relabelings:
         - sourceLabels: [__meta_kubernetes_pod_label_rollouts_pod_template_hash]
           targetLabel: rollouts_pod_template_hash

@@ -8,10 +8,15 @@ fullnameOverride: kps
 # ---- Grafana ----
 grafana:
   enabled: true
-  # TODO : passez par un Secret pour le mot de passe admin.
-  # En l'état c'est en clair pour démarrer le TP. À CORRIGER avant
-  # toute exposition réseau.
-  adminPassword: "changeme"
+  # Mot de passe admin PAS en clair dans Git (piège documenté à l'étape 3 du
+  # poly : laisser "prom-operator"/"changeme" = incident à la moindre
+  # exposition). Le Secret "grafana-admin-credentials" est créé hors-Git
+  # (kubectl apply, une seule fois par cluster) - voir RAPPORT.md pour la
+  # commande exacte. Défi bonus Sealed Secrets non traité dans cette session.
+  admin:
+    existingSecret: "grafana-admin-credentials"
+    userKey: admin-user
+    passwordKey: admin-password
   defaultDashboardsTimezone: browser
   ingress:
     enabled: true
