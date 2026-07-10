@@ -1,18 +1,25 @@
 {{- /*
-  Deployment de SECOURS — pour bootstrapper le service tant que le Rollout
-  n'est pas écrit (étapes 0 à 4 du TP).
-  En étape 5 vous écrirez rollout.yaml ET passerez `useDeployment: false`
-  dans values.yaml. Le Deployment cessera alors d'être rendu.
+  Rollout (étape 5) : remplace deployment.yaml. Stratégie canary avec
+  traffic routing nginx (poids réel via l'Ingress canary auto-géré par le
+  contrôleur Argo Rollouts, pas une approximation par nombre de réplicas).
+
+  Déclenchement d'un nouveau canary : ce TP construit les images en local
+  avec un tag fixe (image.tag: dev, cf. Makefile) plutôt qu'un tag basé sur
+  le SHA Git — un `make images-build images-load` seul ne change donc rien
+  au pod template. Le déclencheur ici est `rollout.marker` (values.yaml) :
+  bumpez sa valeur et committez pour simuler un nouveau commit image.tag:
+  <sha> tel que décrit dans "La promesse de cette chaîne" du poly.
 */ -}}
-{{- if .Values.useDeployment }}
-apiVersion: apps/v1
-kind: Deployment
+{{- if not .Values.useDeployment }}
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
 metadata:
   name: {{ include "annuaire.fullname" . }}
   labels:
     {{- include "annuaire.labels" . | nindent 4 }}
 spec:
   replicas: {{ .Values.replicaCount }}
+  revisionHistoryLimit: 3
   selector:
     matchLabels:
       {{- include "annuaire.selectorLabels" . | nindent 6 }}
@@ -44,6 +51,10 @@ spec:
               value: {{ .Chart.AppVersion | quote }}
             - name: COMMIT
               value: {{ .Values.image.tag | quote }}
+            - name: ROLLOUT_MARKER
+              value: {{ .Values.rollout.marker | quote }}
+            - name: FAIL_RATE
+              value: {{ .Values.rollout.failRate | quote }}
           readinessProbe:
             httpGet:
               path: {{ .Values.probes.readiness.path }}
@@ -63,4 +74,17 @@ spec:
             allowPrivilegeEscalation: {{ .Values.securityContext.allowPrivilegeEscalation }}
             capabilities:
               {{- toYaml .Values.securityContext.capabilities | nindent 14 }}
+  strategy:
+    canary:
+      canaryService: {{ include "annuaire.fullname" . }}-canary
+      stableService: {{ include "annuaire.fullname" . }}
+      trafficRouting:
+        nginx:
+          stableIngress: {{ include "annuaire.fullname" . }}
+      steps:
+        - setWeight: 20
+        - pause: {duration: 30s}
+        - setWeight: 50
+        - pause: {duration: 30s}
+        - setWeight: 100
 {{- end }}

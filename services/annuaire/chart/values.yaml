@@ -36,9 +36,19 @@ monitoring:
     # Doit correspondre au releaseName du chart kube-prometheus-stack.
     release: kps
 
-# Tant que le Rollout n'est pas écrit (étape 5), le chart garde un Deployment
-# de secours pour démarrer. Passez à false dès que rollout.yaml est en place.
-useDeployment: true
+# Étape 5 : Rollout en place, le Deployment de secours est supprimé du chart
+# (pas conservé en doublon, cf. piège documenté au poly).
+useDeployment: false
+
+# rollout.marker : bump cette valeur (+ commit) pour déclencher un nouveau
+# canary — ce TP construit les images avec un tag fixe (dev), donc rien
+# d'autre dans le pod template ne change automatiquement à chaque build.
+# rollout.failRate : 0..1, injecte du 500 sur /break (utilisé étape 7 pour
+# provoquer un rollback automatique). Piloté séparément par environnement
+# (values-dev.yaml) pour ne jamais l'activer par erreur ailleurs.
+rollout:
+  marker: "v1"
+  failRate: "0"
 
 resources:
   requests:
