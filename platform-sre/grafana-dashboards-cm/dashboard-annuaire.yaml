@@ -51,7 +51,7 @@ data:
               "type": "prometheus",
               "uid": "${datasource}"
             },
-            "query": "label_values(http_requests_total{service=\"annuaire-dev-annuaire\"}, instance)",
+            "query": "label_values(http_requests_total{service=~\"annuaire-dev-annuaire(-canary)?\"}, instance)",
             "current": {},
             "refresh": 2,
             "hide": 0
@@ -85,7 +85,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(http_requests_total{service=\"annuaire-dev-annuaire\", namespace=\"$namespace\"}[5m])) by (route)",
+              "expr": "sum(rate(http_requests_total{service=~\"annuaire-dev-annuaire(-canary)?\", namespace=\"$namespace\"}[5m])) by (route)",
               "legendFormat": "{{route}}",
               "refId": "A"
             }
@@ -119,7 +119,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "sum(rate(http_requests_total{service=\"annuaire-dev-annuaire\", namespace=\"$namespace\", status_class=\"5xx\"}[5m])) / sum(rate(http_requests_total{service=\"annuaire-dev-annuaire\", namespace=\"$namespace\"}[5m]))",
+              "expr": "sum(rate(http_requests_total{service=~\"annuaire-dev-annuaire(-canary)?\", namespace=\"$namespace\", status_class=\"5xx\"}[5m])) / sum(rate(http_requests_total{service=~\"annuaire-dev-annuaire(-canary)?\", namespace=\"$namespace\"}[5m]))",
               "legendFormat": "error ratio",
               "refId": "A"
             }
@@ -151,7 +151,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{service=\"annuaire-dev-annuaire\", namespace=\"$namespace\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.50, sum(rate(http_request_duration_seconds_bucket{service=~\"annuaire-dev-annuaire(-canary)?\", namespace=\"$namespace\"}[5m])) by (le))",
               "legendFormat": "p50",
               "refId": "A"
             },
@@ -160,7 +160,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=\"annuaire-dev-annuaire\", namespace=\"$namespace\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=~\"annuaire-dev-annuaire(-canary)?\", namespace=\"$namespace\"}[5m])) by (le))",
               "legendFormat": "p95",
               "refId": "B"
             },
@@ -169,7 +169,7 @@ data:
                 "type": "prometheus",
                 "uid": "${datasource}"
               },
-              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service=\"annuaire-dev-annuaire\", namespace=\"$namespace\"}[5m])) by (le))",
+              "expr": "histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{service=~\"annuaire-dev-annuaire(-canary)?\", namespace=\"$namespace\"}[5m])) by (le))",
               "legendFormat": "p99",
               "refId": "C"
             }

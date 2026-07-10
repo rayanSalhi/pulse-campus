@@ -22,9 +22,9 @@ spec:
         - alert: AnnuaireHighErrorRate
           expr: |
             (
-              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", status_class="5xx"}[5m]))
+              sum(rate(http_requests_total{service=~"{{ include "annuaire.fullname" . }}(-canary)?", status_class="5xx"}[5m]))
               /
-              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}"}[5m]))
+              sum(rate(http_requests_total{service=~"{{ include "annuaire.fullname" . }}(-canary)?"}[5m]))
             ) or vector(0)
             > 0.01
           for: 5m
@@ -37,7 +37,7 @@ spec:
         - alert: AnnuaireHighLatency
           expr: |
             (
-              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="{{ include "annuaire.fullname" . }}"}[5m])) by (le))
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service=~"{{ include "annuaire.fullname" . }}(-canary)?"}[5m])) by (le))
             ) or vector(0)
             > 0.3
           for: 30m
