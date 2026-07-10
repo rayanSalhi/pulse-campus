@@ -1,0 +1,50 @@
+{{- /*
+  PrometheusRule (étape 10) : alertes gradées, mêmes seuils que le SLO de
+  l'étape 1 et l'AnalysisTemplate de l'étape 7 — pas un troisième jeu de
+  seuils inventé pour l'occasion.
+  - severity: page  -> réveille (error rate, fenêtre courte)
+  - severity: ticket -> attend lundi (latence dégradée, fenêtre longue)
+  `for:` stabilise chaque règle contre le bruit d'un pic transitoire (piège
+  documenté à l'étape 10 du poly).
+*/ -}}
+{{- if not .Values.useDeployment }}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ include "annuaire.fullname" . }}
+  labels:
+    {{- include "annuaire.labels" . | nindent 4 }}
+    release: {{ .Values.monitoring.serviceMonitor.release | quote }}
+spec:
+  groups:
+    - name: annuaire.rules
+      rules:
+        - alert: AnnuaireHighErrorRate
+          expr: |
+            (
+              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", status_class="5xx"}[5m]))
+              /
+              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}"}[5m]))
+            ) or vector(0)
+            > 0.01
+          for: 5m
+          labels:
+            severity: page
+            service: annuaire
+          annotations:
+            summary: "annuaire : taux d'erreur 5xx au-dessus de 1% depuis 5 minutes"
+            description: "SLO de disponibilité annuaire (99,5%, étape 1) en train de brûler l'error budget."
+        - alert: AnnuaireHighLatency
+          expr: |
+            (
+              histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket{service="{{ include "annuaire.fullname" . }}"}[5m])) by (le))
+            ) or vector(0)
+            > 0.3
+          for: 30m
+          labels:
+            severity: ticket
+            service: annuaire
+          annotations:
+            summary: "annuaire : latence p95 au-dessus de 300ms depuis 30 minutes"
+            description: "SLO de latence annuaire (p95 < 300ms, étape 1) dégradé sur une fenêtre longue — pas urgent mais à traiter."
+{{- end }}
