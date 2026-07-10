@@ -32,3 +32,16 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+
+  # Argo Rollouts patche spec.selector des Services active/preview pour y
+  # ajouter rollouts-pod-template-hash au runtime. Sans cette exclusion,
+  # chaque sync ArgoCD réapplique le sélecteur "nu" du chart (sans le hash)
+  # et efface ce patch — observé en pratique : le blueGreen se comportait
+  # comme si chaque révision était un "Initial deploy" (activeSelector et
+  # previewSelector confondus dès la création, malgré autoPromotionEnabled:
+  # false), à chaque hard-refresh ArgoCD rapproché du précédent.
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/selector

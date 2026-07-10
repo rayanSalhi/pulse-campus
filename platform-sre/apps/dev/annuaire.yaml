@@ -27,3 +27,14 @@ spec:
     syncOptions:
       - CreateNamespace=true
       - ServerSideApply=true
+
+  # Argo Rollouts patche spec.selector des Services stable/canary pour y
+  # ajouter rollouts-pod-template-hash au runtime. Sans cette exclusion,
+  # chaque sync ArgoCD réapplique le sélecteur "nu" du chart (sans le hash)
+  # et efface ce patch — le contrôleur croit alors qu'aucune version n'est
+  # encore active et retraite le canary comme un "Initial deploy".
+  ignoreDifferences:
+    - group: ""
+      kind: Service
+      jsonPointers:
+        - /spec/selector
