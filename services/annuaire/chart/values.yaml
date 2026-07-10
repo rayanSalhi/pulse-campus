@@ -47,7 +47,7 @@ useDeployment: false
 # provoquer un rollback automatique). Piloté séparément par environnement
 # (values-dev.yaml) pour ne jamais l'activer par erreur ailleurs.
 rollout:
-  marker: "v5"
+  marker: "v6"
   failRate: "0"
 
 resources:
