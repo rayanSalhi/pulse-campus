@@ -1,0 +1,37 @@
+# Application ArgoCD : dashboards Grafana (étape 4).
+#
+# Déploie les ConfigMaps portant le label grafana_dashboard=1, découvertes
+# automatiquement par le sidecar de provisioning de Grafana
+# (grafana.sidecar.dashboards.enabled: true dans kube-prometheus-stack-values.yaml).
+#
+# Les fichiers JSON "livrables" (demandés tels quels par le poly) vivent dans
+# platform-sre/dashboards/ ; ce répertoire-ci ne contient que les ConfigMaps
+# qui les enveloppent, pour que le générateur "directory" d'ArgoCD n'essaie
+# pas d'appliquer un .json brut comme un manifeste Kubernetes.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: grafana-dashboards
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: devhub
+
+  source:
+    repoURL: https://github.com/rayanSalhi/pulse-campus.git
+    targetRevision: main
+    path: platform-sre/grafana-dashboards-cm
+    directory:
+      recurse: false
+
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: monitoring
+
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
