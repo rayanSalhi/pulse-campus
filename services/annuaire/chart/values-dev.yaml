@@ -13,3 +13,9 @@ metrics:
 
 monitoring:
   enabled: true
+
+# Étape 10, démo de l'alerte "page" : FAIL_RATE > seuil SLO (1%) sur /break.
+# Remis à "0" une fois l'alerte observée firing (voir RAPPORT.md).
+rollout:
+  marker: "v11-alert-page-demo"
+  failRate: "0.6"
