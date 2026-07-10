@@ -13,10 +13,3 @@ metrics:
 
 monitoring:
   enabled: true
-
-# Étape 7, cas dégradé : FAIL_RATE > seuil SLO (1%) sur /break pour
-# provoquer un rollback automatique de l'AnalysisTemplate. Remis à "0" une
-# fois la démonstration terminée (voir RAPPORT.md).
-rollout:
-  marker: "v9-fail-demo"
-  failRate: "0.5"
