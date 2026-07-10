@@ -17,6 +17,7 @@ ingress:
   enabled: true
   className: nginx
   host: planning.devhub.local
+  previewHost: planning-preview.devhub.local
   path: /
 
 env:
@@ -32,7 +33,20 @@ monitoring:
     interval: 30s
     release: kps
 
-useDeployment: true
+# Étape 8 : Rollout blueGreen en place, le Deployment de secours est supprimé.
+useDeployment: false
+
+# rollout.marker : même mécanisme que pour annuaire (étape 5) pour déclencher
+# une nouvelle version malgré le tag d'image fixe (dev).
+# rollout.autoPromotionEnabled : false pour la première démo (bascule
+# manuelle) ; passer à true active la bascule automatique.
+# rollout.prePromotionAnalysis : false pour la première démo, true pour la
+# seconde (bascule conditionnée à l'AnalysisTemplate de vérification preview).
+rollout:
+  marker: "v1"
+  failRate: "0"
+  autoPromotionEnabled: false
+  prePromotionAnalysis: false
 
 resources:
   requests:

@@ -1,0 +1,34 @@
+{{- /*
+  AnalysisTemplate (étape 8, prePromotionAnalysis) : vérifie la preview
+  pendant 2 minutes avant d'autoriser la bascule du trafic (activeService).
+  Même logique de filtrage que l'AnalysisTemplate d'annuaire (étape 7) :
+  rollouts_pod_template_hash="{{args.preview-hash}}" isole strictement le
+  trafic envoyé à previewService.
+*/ -}}
+{{- if and (not .Values.useDeployment) .Values.rollout.prePromotionAnalysis }}
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: {{ include "planning.fullname" . }}-preview-check
+  labels:
+    {{- include "planning.labels" . | nindent 4 }}
+spec:
+  args:
+    - name: preview-hash
+  metrics:
+    - name: error-rate
+      interval: 30s
+      count: 4
+      failureLimit: 1
+      provider:
+        prometheus:
+          address: http://prometheus-operated.monitoring.svc.cluster.local:9090
+          query: |
+            clamp_min(
+              sum(rate(http_requests_total{service="{{ include "planning.fullname" . }}-preview", rollouts_pod_template_hash="{{ "{{" }}args.preview-hash{{ "}}" }}", status_class="5xx"}[1m])) or vector(0)
+              /
+              sum(rate(http_requests_total{service="{{ include "planning.fullname" . }}-preview", rollouts_pod_template_hash="{{ "{{" }}args.preview-hash{{ "}}" }}"}[1m])),
+              0
+            )
+      successCondition: result[0] < 0.01
+{{- end }}

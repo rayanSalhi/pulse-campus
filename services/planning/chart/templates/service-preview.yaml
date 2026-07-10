@@ -1,0 +1,23 @@
+{{- /*
+  Service preview (étape 8, blueGreen) : sélectionne les pods de la NOUVELLE
+  version pendant qu'elle tourne à 100% de capacité mais avant bascule du
+  trafic utilisateur. Argo Rollouts ajoute lui-même le sélecteur
+  rollouts-pod-template-hash correspondant à la ReplicaSet "preview".
+  Le Service "stable" (service.yaml) reste le seul à recevoir le trafic
+  utilisateur tant que `promote` n'a pas été tapé.
+*/ -}}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "planning.fullname" . }}-preview
+  labels:
+    {{- include "planning.labels" . | nindent 4 }}
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: {{ .Values.service.port }}
+      targetPort: http
+      protocol: TCP
+  selector:
+    {{- include "planning.selectorLabels" . | nindent 4 }}
