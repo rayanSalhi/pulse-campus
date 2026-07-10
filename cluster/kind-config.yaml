@@ -7,11 +7,16 @@
 #   - les ports 80/443 du control-plane sont publiés sur l'hôte, ce qui rend les
 #     ingress accessibles via http://<host>.devhub.local depuis votre navigateur.
 
+# Image de nœud épinglée : sans cette clé, kind récupère la dernière image
+# kindest/node disponible (ex: v1.36.x), trop récente pour le client
+# Kubernetes embarqué dans ArgoCD 7.6.12/2.12.6 (champ .status.terminatingReplicas
+# non reconnu -> ComparisonError persistant sur toutes les Applications).
 kind: Cluster
 apiVersion: kind.x-k8s.io/v1alpha4
 name: pulse
 nodes:
   - role: control-plane
+    image: kindest/node:v1.31.0
     kubeadmConfigPatches:
       - |
         kind: InitConfiguration
@@ -26,3 +31,4 @@ nodes:
         hostPort: 443
         protocol: TCP
   - role: worker
+    image: kindest/node:v1.31.0
