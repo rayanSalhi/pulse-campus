@@ -82,19 +82,20 @@ spec:
       trafficRouting:
         nginx:
           stableIngress: {{ include "annuaire.fullname" . }}
+          # Étape 9 : routage header-based. Le step déclaratif setHeaderRoute
+          # n'est PAS supporté par le provider nginx (seulement Istio/ALB/
+          # Apisix — erreur CRD explicite testée en conditions réelles :
+          # "SetHeaderRoute requires TrafficRouting, supports Istio and ALB
+          # and Apisix"). Avec nginx, le mécanisme correct est d'ajouter les
+          # annotations canary-by-header directement sur l'Ingress canary
+          # qu'Argo Rollouts gère déjà lui-même — pas d'Ingress supplémentaire
+          # à écrire à la main (piège de l'étape 5 sur les Ingress canary
+          # dupliqués). Un testeur envoyant X-Beta-User: true touche
+          # systématiquement le canary, indépendamment du setWeight en cours.
+          additionalIngressAnnotations:
+            canary-by-header: X-Beta-User
+            canary-by-header-value: "true"
       steps:
-        # Étape 9 : routage header-based indépendant du poids — un testeur
-        # interne envoyant X-Beta-User: true touche systématiquement le
-        # canary, dès le début du rollout, quel que soit setWeight. Géré par
-        # Argo Rollouts via l'annotation nginx canary-by-header sur l'Ingress
-        # canary qu'il gère déjà (pas d'Ingress supplémentaire à écrire à la
-        # main — cf. piège de l'étape 5 sur les Ingress canary dupliqués).
-        - setHeaderRoute:
-            name: header-route-beta
-            match:
-              - headerName: X-Beta-User
-                headerValue:
-                  exact: "true"
         - setWeight: 20
         # Étape 7 : la promotion vers 50%/100% est désormais conditionnée à
         # l'AnalysisTemplate (taux d'erreur + latence p95 du canary), plus
@@ -109,9 +110,5 @@ spec:
                   podTemplateHashValue: Latest
         - setWeight: 50
         - pause: {duration: 30s}
-        # Retire le header-route avant la promotion finale : à 100%, tout le
-        # trafic (avec ou sans header) touche déjà la nouvelle version.
-        - setHeaderRoute:
-            name: header-route-beta
         - setWeight: 100
 {{- end }}
