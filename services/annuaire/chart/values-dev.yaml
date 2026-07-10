@@ -18,5 +18,5 @@ monitoring:
 # provoquer un rollback automatique de l'AnalysisTemplate. Remis à "0" une
 # fois la démonstration terminée (voir RAPPORT.md).
 rollout:
-  marker: "v8-fail-demo"
+  marker: "v9-fail-demo"
   failRate: "0.5"
