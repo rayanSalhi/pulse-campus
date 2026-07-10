@@ -28,12 +28,11 @@ spec:
         prometheus:
           address: http://prometheus-operated.monitoring.svc.cluster.local:9090
           query: |
-            clamp_min(
-              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}", status_class="5xx"}[1m])) or vector(0)
+            (
+              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}", status_class="5xx"}[2m]))
               /
-              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}"}[1m])),
-              0
-            )
+              sum(rate(http_requests_total{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}"}[2m]))
+            ) or vector(0)
       successCondition: result[0] < 0.01
     - name: latency-p95
       interval: 30s
@@ -43,9 +42,11 @@ spec:
         prometheus:
           address: http://prometheus-operated.monitoring.svc.cluster.local:9090
           query: |
-            histogram_quantile(
-              0.95,
-              sum(rate(http_request_duration_seconds_bucket{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}"}[1m])) by (le)
-            )
+            (
+              histogram_quantile(
+                0.95,
+                sum(rate(http_request_duration_seconds_bucket{service="{{ include "annuaire.fullname" . }}", rollouts_pod_template_hash="{{ "{{" }}args.canary-hash{{ "}}" }}"}[2m])) by (le)
+              )
+            ) or vector(0)
       successCondition: result[0] < 0.3
 {{- end }}

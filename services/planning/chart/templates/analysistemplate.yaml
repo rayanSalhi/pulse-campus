@@ -24,11 +24,10 @@ spec:
         prometheus:
           address: http://prometheus-operated.monitoring.svc.cluster.local:9090
           query: |
-            clamp_min(
-              sum(rate(http_requests_total{service="{{ include "planning.fullname" . }}-preview", rollouts_pod_template_hash="{{ "{{" }}args.preview-hash{{ "}}" }}", status_class="5xx"}[1m])) or vector(0)
+            (
+              sum(rate(http_requests_total{service="{{ include "planning.fullname" . }}-preview", rollouts_pod_template_hash="{{ "{{" }}args.preview-hash{{ "}}" }}", status_class="5xx"}[2m]))
               /
-              sum(rate(http_requests_total{service="{{ include "planning.fullname" . }}-preview", rollouts_pod_template_hash="{{ "{{" }}args.preview-hash{{ "}}" }}"}[1m])),
-              0
-            )
+              sum(rate(http_requests_total{service="{{ include "planning.fullname" . }}-preview", rollouts_pod_template_hash="{{ "{{" }}args.preview-hash{{ "}}" }}"}[2m]))
+            ) or vector(0)
       successCondition: result[0] < 0.01
 {{- end }}
