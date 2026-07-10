@@ -82,9 +82,12 @@ spec:
         nginx:
           stableIngress: {{ include "annuaire.fullname" . }}
       steps:
-        - setWeight: 20
-        - pause: {duration: 30s}
+        # Étape 6 : pause indéfinie à 10% pour piloter manuellement
+        # (promote / abort / promote --full). L'AnalysisTemplate (étape 7)
+        # est inséré entre le 25% et le 50% une fois écrit.
+        - setWeight: 10
+        - pause: {}
         - setWeight: 50
-        - pause: {duration: 30s}
+        - pause: {duration: 1m}
         - setWeight: 100
 {{- end }}
