@@ -84,3 +84,9 @@ prometheusOperator:
     patch:
       enabled: false
     enabled: false
+  # Sans cert-manager, le secret TLS {{fullname}}-admission n'est jamais créé ;
+  # or l'opérateur le monte dès que tls.enabled=true (défaut du chart), ce qui
+  # bloque le pod en ContainerCreating (FailedMount). On désactive donc aussi
+  # le TLS interne de l'opérateur en local.
+  tls:
+    enabled: false
