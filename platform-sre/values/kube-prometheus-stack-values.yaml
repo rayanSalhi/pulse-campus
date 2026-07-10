@@ -70,10 +70,12 @@ alertmanager:
   # au poly comme ce qui rend l'oncall vivable.
   #
   # Récepteurs : en l'absence d'un vrai Slack/PagerDuty/webhook.site pour ce
-  # TP local, les deux webhooks pointent vers l'endpoint /-/healthy de
-  # Prometheus (déjà déployé) — ça prouve que la livraison HTTP fonctionne
-  # (Alertmanager reçoit un 200) sans dépendre d'un service externe ni
-  # déployer un pod supplémentaire. À remplacer par une vraie URL en prod.
+  # TP local, les deux webhooks pointent vers un petit pod "echo" local
+  # (monitoring/webhook-echo, cf. RAPPORT.md) — testé en direct : pointer
+  # vers Prometheus /-/healthy semblait pratique (déjà déployé) mais échoue
+  # réellement (alertmanager_notifications_failed_total{reason="clientError"})
+  # car Alertmanager envoie du POST et /-/healthy n'accepte que GET (405).
+  # À remplacer par une vraie URL de webhook en prod.
   config:
     global:
       resolve_timeout: 5m
@@ -97,11 +99,11 @@ alertmanager:
       - name: default
       - name: webhook-page
         webhook_configs:
-          - url: http://kps-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+          - url: http://webhook-echo.monitoring.svc.cluster.local:8080/
             send_resolved: true
       - name: webhook-ticket
         webhook_configs:
-          - url: http://kps-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+          - url: http://webhook-echo.monitoring.svc.cluster.local:8080/
             send_resolved: true
 
 # ---- Sous-charts à désactiver sur kind ----

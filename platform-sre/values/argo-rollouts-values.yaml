@@ -19,12 +19,14 @@ dashboard:
 # Mêmes déclencheurs intégrés qu'Argo Rollouts fournit par défaut
 # (on-rollout-completed, on-rollout-aborted) — la souscription se fait par
 # annotation directement sur chaque Rollout (voir rollout.yaml d'annuaire).
-# Webhook pointant vers /-/healthy de Prometheus, faute d'un vrai récepteur
-# externe pour ce TP local (même logique que la config Alertmanager).
+# Webhook pointant vers le pod echo local monitoring/webhook-echo, faute
+# d'un vrai récepteur externe pour ce TP (même logique que la config
+# Alertmanager — /-/healthy de Prometheus a été essayé mais refusé le POST
+# avec un 405).
 notifications:
   notifiers:
     service.webhook.rollout-events:
-      url: http://kps-prometheus.monitoring.svc.cluster.local:9090/-/healthy
+      url: http://webhook-echo.monitoring.svc.cluster.local:8080/
   secret:
     create: true
   configmap:
