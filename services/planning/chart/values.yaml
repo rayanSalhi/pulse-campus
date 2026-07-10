@@ -2,7 +2,7 @@
 # Surchargées par values-dev.yaml selon l'environnement.
 
 image:
-  repository: ghcr.io/changeme/planning
+  repository: planning
   tag: dev
   pullPolicy: IfNotPresent
 

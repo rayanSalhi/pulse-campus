@@ -4,9 +4,9 @@ ARGOCD_CHART_VERSION ?= 7.6.12
 INGRESS_CHART_VERSION ?= 4.11.3
 
 SERVICES := annuaire planning notif
-SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo dev)
-# Adaptez GHCR_USER à votre compte GitHub.
-GHCR_USER ?= rayanSalhi
+# Tag utilisé par les charts (image.repository: <svc>, image.tag: dev dans
+# values.yaml) — doit rester aligné avec images-build/images-load ci-dessous.
+IMAGE_TAG ?= dev
 
 .PHONY: help tools-check cluster-up cluster-down argocd-install argocd-password \
         hosts-print helm-lint images-build images-load clean bootstrap deploy-all
@@ -22,11 +22,11 @@ help:
 	@echo "  argocd-password   - affiche le mot de passe admin initial d'ArgoCD"
 	@echo "  hosts-print       - lignes à ajouter dans /etc/hosts"
 	@echo "  helm-lint         - helm lint sur les charts des trois services"
-	@echo "  images-build      - build des trois images applicatives (tag SHA)"
+	@echo "  images-build      - build des trois images applicatives (tag IMAGE_TAG, défaut: dev)"
 	@echo "  images-load       - kind load des trois images dans le cluster"
 	@echo "  clean             - détruit le cluster et nettoie les artefacts locaux"
 
-deploy-all: cluster-up argocd-install bootstrap
+deploy-all: cluster-up argocd-install images-build images-load bootstrap
 	@echo ">>> 🚀 Déploiement complet terminé !"
 	@echo ">>> Attendez quelques minutes que les pods monitoring soient Running."
 	@echo ">>> Tapez 'make argocd-password' pour obtenir votre mot de passe admin."
@@ -83,6 +83,8 @@ argocd-install:
 	kubectl wait --namespace argocd --for=condition=ready pod --selector=app.kubernetes.io/name=argocd-server --timeout=120s
 
 bootstrap:
+	@echo ">>> Application de l'AppProject devhub (requis par la Root App)..."
+	kubectl apply -f platform-sre/projects/devhub.yaml
 	@echo ">>> Application de la Root App ArgoCD (GitOps)..."
 	kubectl apply -f platform-sre/bootstrap/root-app.yaml
 
@@ -112,14 +114,14 @@ helm-lint:
 
 images-build:
 	@for svc in $(SERVICES); do \
-		echo ">>> docker build $$svc:$(SHA)"; \
-		docker build -t ghcr.io/$(GHCR_USER)/$$svc:$(SHA) services/$$svc; \
+		echo ">>> docker build $$svc:$(IMAGE_TAG)"; \
+		docker build -t $$svc:$(IMAGE_TAG) services/$$svc; \
 	done
 
 images-load:
 	@for svc in $(SERVICES); do \
-		echo ">>> kind load ghcr.io/$(GHCR_USER)/$$svc:$(SHA)"; \
-		kind load docker-image ghcr.io/$(GHCR_USER)/$$svc:$(SHA) --name $(CLUSTER); \
+		echo ">>> kind load $$svc:$(IMAGE_TAG)"; \
+		kind load docker-image $$svc:$(IMAGE_TAG) --name $(CLUSTER); \
 	done
 
 clean:

@@ -1,17 +1,20 @@
-{{- if .Values.metrics.enabled }}
+{{- if .Values.monitoring.enabled }}
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: {{ include "app.fullname" . }}
+  name: {{ include "annuaire.fullname" . }}
   labels:
-    # ATTENTION : Ce label est obligatoire pour que Prometheus le trouve !
-    release: kube-prometheus-stack
+    {{- include "annuaire.labels" . | nindent 4 }}
+    # ATTENTION : ce label doit correspondre au releaseName du chart
+    # kube-prometheus-stack (serviceMonitorSelector.matchLabels.release), sinon
+    # Prometheus ignore silencieusement ce ServiceMonitor.
+    release: {{ .Values.monitoring.serviceMonitor.release | quote }}
 spec:
   selector:
     matchLabels:
-      app: {{ include "app.name" . }}
+      {{- include "annuaire.selectorLabels" . | nindent 6 }}
   endpoints:
     - port: http
       path: /metrics
-      interval: 15s
+      interval: {{ .Values.monitoring.serviceMonitor.interval }}
 {{- end }}

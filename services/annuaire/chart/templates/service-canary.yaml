@@ -1,14 +1,21 @@
+{{- /*
+  Service canary de secours : tant que rollout.yaml n'existe pas (étape 5),
+  Argo Rollouts ne pose pas le label rollouts-pod-template-hash qui distingue
+  les pods canary des pods stable. Ce Service sélectionne donc aujourd'hui
+  exactement les mêmes pods que le Service stable (service.yaml) — il n'a pas
+  encore d'effet de traffic split réel avant la migration en Rollout.
+*/ -}}
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "app.fullname" . }}-canary
+  name: {{ include "annuaire.fullname" . }}-canary
   labels:
-    app: {{ include "app.name" . }}
+    {{- include "annuaire.labels" . | nindent 4 }}
 spec:
   type: ClusterIP
   ports:
-    - port: 80
+    - port: {{ .Values.service.port }}
       targetPort: http
       name: http
   selector:
-    app: {{ include "app.name" . }}
+    {{- include "annuaire.selectorLabels" . | nindent 4 }}
